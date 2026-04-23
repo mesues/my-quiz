@@ -1,46 +1,94 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hızlı Quiz Uygulaması</title>
+    <title>English Mastery Quiz</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <!-- Başlangıç Ekranı -->
-        <div id="start-screen">
-            <h1>Hoş Geldiniz!</h1>
-            <p>Bilginizi test etmeye hazır mısınız? Toplam 5 soru sizi bekliyor.</p>
-            <button id="start-btn" class="btn-primary">Quize Başla</button>
+        <!-- Login Screen -->
+        <div id="login-screen">
+            <h1>English Mastery Quiz</h1>
+            <p style="text-align:center;">Please enter your details to begin the exam.</p>
+            <div class="form-group">
+                <label>First Name</label>
+                <input type="text" id="fname" placeholder="Enter your first name">
+            </div>
+            <div class="form-group">
+                <label>Last Name</label>
+                <input type="text" id="lname" placeholder="Enter your last name">
+            </div>
+            <div class="form-group">
+                <label>Class / Group</label>
+                <input type="text" id="class-info" placeholder="e.g. 10-A, 12-B">
+            </div>
+            <button id="start-btn" class="btn-main">Start Quiz</button>
         </div>
 
-        <!-- Quiz Ekranı -->
+        <!-- Quiz Screen -->
         <div id="quiz-screen" class="hidden">
-            <div id="question-container">
-                <p id="question-text">Soru metni buraya gelecek.</p>
-                <div id="options-list" class="options-list">
-                    <!-- Butonlar dinamik olarak eklenecek -->
+            <div class="quiz-header">
+                <div>Question: <span id="q-count">1/5</span></div>
+                <div>Timer: <span id="q-timer">0s</span></div>
+            </div>
+            <div class="question-card">
+                <h2 id="question-text">Loading question...</h2>
+                <div id="options-grid" class="options-grid"></div>
+            </div>
+            <button id="next-btn" class="btn-main hidden">Next Question</button>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden">
+            <h1>Exam Report</h1>
+            
+            <!-- Part 1: Summary -->
+            <div class="report-section">
+                <h3>Part 1: Performance Summary</h3>
+                <div class="summary-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Final Score</div>
+                        <div id="final-score" class="stat-val">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Correct/Total</div>
+                        <div id="correct-count" class="stat-val">0/5</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Time</div>
+                        <div id="total-time" class="stat-val">0s</div>
+                    </div>
                 </div>
             </div>
-            <button id="next-btn" class="btn-primary hidden">Sonraki Soru</button>
+
+            <!-- Part 2: Detailed Review -->
+            <div class="report-section">
+                <h3>Part 2: Question Breakdown</h3>
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Status</th>
+                            <th>Your Answer</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="details-body"></tbody>
+                </table>
+            </div>
+
+            <button onclick="location.reload()" class="btn-main" style="margin-top:20px; background:#7f8c8d;">Retake Quiz</button>
         </div>
-
-        <!-- Sonuç Ekranı -->
-        <div id="result-screen" class="hidden">
-            <h1>Quiz Tamamlandı!</h1>
-            <p>Başarı Oranınız: <span id="score-display">0</span></p>
-            
-            <div id="results-summary" class="results-summary">
-                <!-- Özet buraya gelecek -->
-            </div>
-
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px;">
-                <button id="download-btn" class="btn-primary">Sonuçları İndir (.txt)</button>
-                <button onclick="location.reload()" class="btn-primary" style="background-color: #7f8c8d;">Tekrar Dene</button>
-            </div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
+    <!-- Config and Logic -->
+    <script src="firebase-config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
