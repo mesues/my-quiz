@@ -154,7 +154,7 @@ function finishQuiz() {
     });
 
     saveToDatabase(finalScorePerc, totalTime, detailedData);
-    sendEmail(finalScorePerc, totalTime);
+    sendEmail(finalScorePerc, totalTime, detailedData);
 }
 
 function saveToDatabase(scorePerc, totalTime, detailedData) {
@@ -171,19 +171,33 @@ function saveToDatabase(scorePerc, totalTime, detailedData) {
     }
 }
 
-function sendEmail(scorePerc, totalTime) {
+function sendEmail(scorePerc, totalTime, detailedData) {
+    // Create a text-based version of the detailed report for the email
+    let reportDetails = "";
+    detailedData.forEach((item, index) => {
+        reportDetails += `\nQuestion ${index + 1}: ${item.question}\n`;
+        reportDetails += `   - Answer: ${item.userAnswer}\n`;
+        reportDetails += `   - Status: ${item.isCorrect ? "CORRECT" : "INCORRECT"}\n`;
+        reportDetails += `   - Time Spent: ${item.time}s\n`;
+    });
+
     const emailPayload = {
-        _subject: `New Quiz Result: ${userData.fname} ${userData.lname}`,
-        Name: `${userData.fname} ${userData.lname}`,
-        Class: userData.classInfo,
-        Score: `${scorePerc}% (${score}/${quizData.length})`,
-        TotalTime: `${totalTime} seconds`,
-        _captcha: "false"
+        _subject: `Quiz Report: ${userData.fname} ${userData.lname} (${scorePerc}%)`,
+        "Student Name": `${userData.fname} ${userData.lname}`,
+        "Student Class": userData.classInfo,
+        "Final Score": `${scorePerc}% (${score}/${quizData.length})`,
+        "Total Duration": `${totalTime} seconds`,
+        "Detailed Report": reportDetails,
+        _captcha: "false",
+        _template: "table" // Suggests FormSubmit to use a table layout if available
     };
 
     fetch("https://formsubmit.co/ajax/mesuesinformatike@gmail.com", {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(emailPayload)
-    });
+    })
+    .then(response => response.json())
+    .then(data => console.log("Email report sent successfully"))
+    .catch(err => console.error("Email error:", err));
 }
