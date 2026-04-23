@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hızlı Quiz Uygulaması</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Başlangıç Ekranı -->
+        <div id="start-screen">
+            <h1>Hoş Geldiniz!</h1>
+            <p>Bilginizi test etmeye hazır mısınız? Toplam 5 soru sizi bekliyor.</p>
+            <button id="start-btn" class="btn-primary">Quize Başla</button>
+        </div>
+
+        <!-- Quiz Ekranı -->
+        <div id="quiz-screen" class="hidden">
+            <div id="question-container">
+                <p id="question-text">Soru metni buraya gelecek.</p>
+                <div id="options-list" class="options-list">
+                    <!-- Butonlar dinamik olarak eklenecek -->
+                </div>
+            </div>
+            <button id="next-btn" class="btn-primary hidden">Sonraki Soru</button>
+        </div>
+
+        <!-- Sonuç Ekranı -->
+        <div id="result-screen" class="hidden">
+            <h1>Quiz Tamamlandı!</h1>
+            <p>Başarı Oranınız: <span id="score-display">0</span></p>
+            
+            <div id="results-summary" class="results-summary">
+                <!-- Özet buraya gelecek -->
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px;">
+                <button id="download-btn" class="btn-primary">Sonuçları İndir (.txt)</button>
+                <button onclick="location.reload()" class="btn-primary" style="background-color: #7f8c8d;">Tekrar Dene</button>
+            </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
