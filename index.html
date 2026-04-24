@@ -40,6 +40,29 @@
             <button id="next-btn" class="btn-main hidden">Next Question</button>
         </div>
 
+        <!-- Scenario Screen -->
+        <div id="scenario-screen" class="hidden">
+            <h1>Part B: Scenario Task</h1>
+            <div class="report-section">
+                <h3 id="scenario-title">Scenario Name</h3>
+                <p id="scenario-desc" style="font-style: italic; color: #666;"></p>
+                <hr>
+                <div class="form-group">
+                    <label>1. Security (5 pts): Name one security risk for this system and how to fix it.</label>
+                    <textarea id="ans-security" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>2. SDLC (10 pts): Describe what happens in the Design and Testing phases for this specific project.</label>
+                    <textarea id="ans-sdlc" rows="4" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>3. HCI (5 pts): Suggest one way to make the User Interface (UI) easy to use for a beginner.</label>
+                    <textarea id="ans-hci" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"></textarea>
+                </div>
+            </div>
+            <button id="submit-scenario-btn" class="btn-main">Submit Final Exam</button>
+        </div>
+
         <!-- Result Screen -->
         <div id="result-screen" class="hidden">
             <h1>Exam Report</h1>
@@ -80,6 +103,10 @@
             </div>
 
             <button onclick="location.reload()" class="btn-main" style="margin-top:20px; background:#7f8c8d;">Retake Quiz</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 50px; opacity: 0.5;">
+            <a href="admin.html" style="color: #666; font-size: 0.8rem; text-decoration: none;">Admin Login</a>
         </div>
     </div>
 

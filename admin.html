@@ -3,16 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Quiz Results</title>
+    <title>Admin Dashboard - Advanced Quiz</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-container { max-width: 1000px; }
+        .admin-container { max-width: 1200px; }
         .results-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .results-table th, .results-table td { padding: 12px; border: 1px solid #ddd; text-align: left; }
         .results-table th { background-color: var(--primary); color: white; }
-        .row-detail { background-color: #f1f1f1; display: none; }
+        .row-detail { background-color: #f9f9f9; display: none; }
         .expand-btn { cursor: pointer; color: var(--accent); font-weight: bold; }
-        .login-box { max-width: 400px; margin: 100px auto; padding: 30px; border-radius: 10px; background: white; box-shadow: var(--shadow); }
+        .login-box { max-width: 400px; margin: 100px auto; padding: 30px; border-radius: 10px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .grading-box { background: white; padding: 20px; border: 1px solid #3498db; border-radius: 10px; margin-top: 10px; }
+        .not-graded { color: #e74c3c; font-weight: bold; }
+        .graded { color: #27ae60; font-weight: bold; }
+        .btn-email { background-color: #e67e22; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -30,7 +34,7 @@
 
         <!-- Dashboard -->
         <div id="admin-dashboard" class="hidden">
-            <h1>Student Quiz Results</h1>
+            <h1>Teacher Dashboard</h1>
             <div style="text-align: right; margin-bottom: 20px;">
                 <button onclick="location.reload()" class="btn-main" style="width:auto; padding: 10px 20px;">Refresh Data</button>
             </div>
@@ -38,21 +42,19 @@
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th>Student Name</th>
-                        <th>Class</th>
-                        <th>Score</th>
-                        <th>Time</th>
+                        <th>Student</th>
+                        <th>MCQ (80)</th>
+                        <th>Scenario (20)</th>
+                        <th>Total (100)</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="admin-tbody">
-                    <!-- Data will be loaded here -->
-                </tbody>
+                <tbody id="admin-tbody"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="firebase-config.js"></script>
@@ -61,7 +63,6 @@
         const loginBox = document.getElementById('admin-login');
         const dashboard = document.getElementById('admin-dashboard');
         const passwordInput = document.getElementById('admin-password');
-        const loginError = document.getElementById('login-error');
 
         document.getElementById('login-btn').onclick = () => {
             if (passwordInput.value === 'admin') {
@@ -69,76 +70,128 @@
                 dashboard.classList.remove('hidden');
                 loadResults();
             } else {
-                loginError.style.display = 'block';
+                document.getElementById('login-error').style.display = 'block';
             }
         };
 
         function loadResults() {
-            if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
-                alert("Firebase not configured correctly in firebase-config.js");
-                return;
-            }
-
             const db = firebase.database();
-            const resultsRef = db.ref('quiz_results');
-
-            resultsRef.on('value', (snapshot) => {
+            db.ref('quiz_results').on('value', (snapshot) => {
                 const data = snapshot.val();
                 const tbody = document.getElementById('admin-tbody');
                 tbody.innerHTML = '';
 
-                if (!data) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No results found yet.</td></tr>';
-                    return;
-                }
+                if (!data) return;
 
-                // Convert to array and sort by timestamp desc
                 const items = Object.keys(data).map(key => ({ id: key, ...data[key] }));
                 items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
                 items.forEach(item => {
                     const date = new Date(item.timestamp).toLocaleString();
-                    const rowId = `details-${item.id}`;
+                    const status = item.isGraded ? '<span class="graded">Graded</span>' : '<span class="not-graded">Pending</span>';
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${date}</td>
-                        <td>${item.user.fname} ${item.user.lname}</td>
-                        <td>${item.user.classInfo}</td>
-                        <td><strong>${item.score}%</strong></td>
-                        <td>${item.totalTime}s</td>
-                        <td><span class="expand-btn" onclick="toggleDetails('${rowId}')">View Details ▼</span></td>
+                        <td>${item.user.fname} ${item.user.lname} (${item.user.classInfo})</td>
+                        <td>${item.mcqScore}</td>
+                        <td>${item.scenarioScore || 0}</td>
+                        <td><strong>${item.totalScore || item.mcqScore}</strong></td>
+                        <td>${status}</td>
+                        <td><span class="expand-btn" onclick="toggleDetails('${item.id}')">Review & Grade ▼</span></td>
                     `;
                     tbody.appendChild(tr);
 
-                    // Detailed breakdown row
                     const detailTr = document.createElement('tr');
-                    detailTr.id = rowId;
+                    detailTr.id = `details-${item.id}`;
                     detailTr.className = 'row-detail';
                     
-                    let detailsHtml = '<td colspan="6"><table style="width:100%; font-size:0.9rem;">';
-                    detailsHtml += '<tr><th>Question</th><th>User Answer</th><th>Result</th><th>Time</th></tr>';
-                    
-                    item.details.forEach(det => {
-                        detailsHtml += `
-                            <tr>
-                                <td>${det.question}</td>
-                                <td>${det.userAnswer}</td>
-                                <td style="color:${det.isCorrect ? 'green' : 'red'}">${det.isCorrect ? 'Correct' : 'Incorrect'}</td>
-                                <td>${det.time}s</td>
-                            </tr>
-                        `;
+                    let mcqDetailsText = "";
+                    item.details.forEach((det, idx) => {
+                        mcqDetailsText += `\n${idx+1}. ${det.question}\n   Ans: ${det.userAnswer} (${det.isCorrect ? 'CORRECT' : 'INCORRECT'})`;
                     });
-                    detailsHtml += '</table></td>';
-                    detailTr.innerHTML = detailsHtml;
+
+                    detailTr.innerHTML = `
+                        <td colspan="7">
+                            <div class="grading-box">
+                                <h3>Scenario: ${item.scenario.title}</h3>
+                                <p><strong>1. Security Answer:</strong><br>${item.scenario.security}</p>
+                                <p><strong>2. SDLC Answer:</strong><br>${item.scenario.sdlc}</p>
+                                <p><strong>3. HCI Answer:</strong><br>${item.scenario.hci}</p>
+                                <hr>
+                                <h4>Grade Scenario (Max 20 pts)</h4>
+                                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                                    <div>Sec (5): <input type="number" id="g-sec-${item.id}" max="5" style="width:50px;" value="${item.g_sec || 0}"></div>
+                                    <div>SDLC (10): <input type="number" id="g-sdlc-${item.id}" max="10" style="width:50px;" value="${item.g_sdlc || 0}"></div>
+                                    <div>HCI (5): <input type="number" id="g-hci-${item.id}" max="5" style="width:50px;" value="${item.g_hci || 0}"></div>
+                                </div>
+                                <button class="btn-main" style="width:auto; padding:8px 20px;" onclick="submitGrade('${item.id}', ${item.mcqScore})">Save Final Grade</button>
+                                <button class="btn-main btn-email" style="width:auto; padding:8px 20px;" onclick="sendEmailManual('${item.id}')">Send Email Report</button>
+                            </div>
+                        </td>
+                    `;
                     tbody.appendChild(detailTr);
                 });
             });
         }
 
         function toggleDetails(id) {
-            const el = document.getElementById(id);
+            const el = document.getElementById(`details-${id}`);
             el.style.display = (el.style.display === 'table-row') ? 'none' : 'table-row';
+        }
+
+        function submitGrade(id, mcqScore) {
+            const sec = parseInt(document.getElementById(`g-sec-${id}`).value) || 0;
+            const sdlc = parseInt(document.getElementById(`g-sdlc-${id}`).value) || 0;
+            const hci = parseInt(document.getElementById(`g-hci-${id}`).value) || 0;
+            
+            const scenarioTotal = sec + sdlc + hci;
+            const finalTotal = mcqScore + scenarioTotal;
+
+            firebase.database().ref('quiz_results/' + id).update({
+                scenarioScore: scenarioTotal,
+                totalScore: finalTotal,
+                g_sec: sec,
+                g_sdlc: sdlc,
+                g_hci: hci,
+                isGraded: true
+            }).then(() => alert("Grade saved successfully!"));
+        }
+
+        function sendEmailManual(id) {
+            firebase.database().ref('quiz_results/' + id).once('value', (snapshot) => {
+                const item = snapshot.val();
+                if (!item) return;
+
+                let reportText = `FINAL REPORT: ${item.user.fname} ${item.user.lname}\n`;
+                reportText += `Class: ${item.user.classInfo}\n`;
+                reportText += `Total Score: ${item.totalScore}/100\n`;
+                reportText += `(MCQ: ${item.mcqScore}/80, Scenario: ${item.scenarioScore}/20)\n\n`;
+                
+                reportText += `--- PART A: MCQ DETAILS ---\n`;
+                item.details.forEach((det, idx) => {
+                    reportText += `${idx+1}. ${det.question}\n   Ans: ${det.userAnswer} (${det.isCorrect ? 'CORRECT' : 'INCORRECT'})\n`;
+                });
+
+                reportText += `\n--- PART B: SCENARIO (${item.scenario.title}) ---\n`;
+                reportText += `1. Security: ${item.scenario.security} (Score: ${item.g_sec || 0}/5)\n`;
+                reportText += `2. SDLC: ${item.scenario.sdlc} (Score: ${item.g_sdlc || 0}/10)\n`;
+                reportText += `3. HCI: ${item.scenario.hci} (Score: ${item.g_hci || 0}/5)\n`;
+
+                const emailPayload = {
+                    _subject: `Final Quiz Result: ${item.user.fname} ${item.user.lname}`,
+                    "Student": `${item.user.fname} ${userData.lname}`,
+                    "Score": `${item.totalScore}/100`,
+                    "Report": reportText,
+                    _captcha: "false"
+                };
+
+                fetch("https://formsubmit.co/ajax/mesuesinformatike@gmail.com", {
+                    method: "POST",
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(emailPayload)
+                }).then(() => alert("Email report sent to teacher!"));
+            });
         }
     </script>
 </body>
