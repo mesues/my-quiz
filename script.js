@@ -31,9 +31,8 @@ const scenarios = [
 
 let userData = { fname: "", lname: "", classInfo: "" };
 let currentQ = 0;
-let mcqScore = 0;
-let sessionResults = [];
-let totalStartTime, questionStartTime;
+let sessionResults = Array(quizData.length).fill(null);
+let totalStartTime;
 let timerInterval;
 let selectedScenario = null;
 
@@ -43,7 +42,8 @@ const scenarioScreen = document.getElementById('scenario-screen');
 const resultScreen = document.getElementById('result-screen');
 
 document.getElementById('start-btn').onclick = startQuiz;
-document.getElementById('next-btn').onclick = nextQuestion;
+document.getElementById('prev-btn').onclick = () => { if(currentQ > 0) { currentQ--; loadQuestion(); } };
+document.getElementById('next-btn').onclick = () => { if(currentQ < quizData.length - 1) { currentQ++; loadQuestion(); } else { showScenario(); } };
 document.getElementById('submit-scenario-btn').onclick = finishQuiz;
 
 function startQuiz() {
@@ -51,16 +51,21 @@ function startQuiz() {
     userData.lname = document.getElementById('lname').value.trim();
     userData.classInfo = document.getElementById('class-info').value.trim();
 
-    if (!userData.fname || !userData.lname || !userData.classInfo) {
-        alert("Please fill in all fields!");
-        return;
-    }
+    if (!userData.fname || !userData.lname || !userData.classInfo) { alert("Fields required!"); return; }
 
     loginScreen.classList.add('hidden');
     quizScreen.classList.remove('hidden');
-    
     totalStartTime = Date.now();
     loadQuestion();
+    startGlobalTimer();
+}
+
+function startGlobalTimer() {
+    let sec = 0;
+    timerInterval = setInterval(() => {
+        sec++;
+        document.getElementById('q-timer').innerText = sec + 's';
+    }, 1000);
 }
 
 function loadQuestion() {
@@ -74,133 +79,85 @@ function loadQuestion() {
     q.options.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
+        if(sessionResults[currentQ] && sessionResults[currentQ].selected === i) btn.classList.add('selected');
         btn.innerText = opt;
-        btn.onclick = () => selectOption(i, btn);
+        btn.onclick = () => selectOption(i);
         grid.appendChild(btn);
     });
-
-    document.getElementById('next-btn').classList.add('hidden');
-    questionStartTime = Date.now();
-    startTimer();
 }
 
-function startTimer() {
-    clearInterval(timerInterval);
-    let sec = 0;
-    document.getElementById('q-timer').innerText = '0s';
-    timerInterval = setInterval(() => {
-        sec++;
-        document.getElementById('q-timer').innerText = sec + 's';
-    }, 1000);
-}
-
-function selectOption(index, btn) {
-    const all = document.querySelectorAll('.option-btn');
-    all.forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
+function selectOption(index) {
+    sessionResults[currentQ] = { selected: index };
+    loadQuestion(); // Show selection
     
-    sessionResults[currentQ] = {
-        selected: index,
-        timeSpent: Math.round((Date.now() - questionStartTime) / 1000)
-    };
-    
-    document.getElementById('next-btn').classList.remove('hidden');
-}
-
-function nextQuestion() {
-    if (sessionResults[currentQ].selected === quizData[currentQ].correct) {
-        mcqScore += 4;
-    }
-
-    currentQ++;
-    if (currentQ < quizData.length) {
-        loadQuestion();
-    } else {
-        showScenario();
-    }
+    // Auto next after short delay
+    setTimeout(() => {
+        if(currentQ < quizData.length - 1) {
+            currentQ++;
+            loadQuestion();
+        } else {
+            showScenario();
+        }
+    }, 300);
 }
 
 function showScenario() {
     clearInterval(timerInterval);
     quizScreen.classList.add('hidden');
     scenarioScreen.classList.remove('hidden');
-    
     selectedScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-    document.getElementById('scenario-title').innerText = "Chosen Scenario: " + selectedScenario.title;
+    document.getElementById('scenario-title').innerText = "Scenario: " + selectedScenario.title;
     document.getElementById('scenario-desc').innerText = selectedScenario.desc;
 }
 
 function finishQuiz() {
-    const secAns = document.getElementById('ans-security').value.trim();
-    const sdlcAns = document.getElementById('ans-sdlc').value.trim();
-    const hciAns = document.getElementById('ans-hci').value.trim();
+    const scenarioAns = {
+        title: selectedScenario.title,
+        security: document.getElementById('ans-security').value.trim(),
+        sdlc: document.getElementById('ans-sdlc').value.trim(),
+        hci: document.getElementById('ans-hci').value.trim()
+    };
 
-    if (!secAns || !sdlcAns || !hciAns) {
-        alert("Please answer all scenario questions!");
-        return;
-    }
+    if(!scenarioAns.security || !scenarioAns.sdlc || !scenarioAns.hci) { alert("Please complete Scenario questions!"); return; }
 
     scenarioScreen.classList.add('hidden');
     resultScreen.classList.remove('hidden');
 
-    const totalTime = Math.round((Date.now() - totalStartTime) / 1000);
-
-    // Update UI Summary
-    document.getElementById('final-score').innerText = mcqScore + " / 80 (MCQ Part)";
-    document.getElementById('correct-count').innerText = `${mcqScore/4}/${quizData.length}`;
-    document.getElementById('total-time').innerText = totalTime + 's';
-
-    // Build Detailed Table
-    const tbody = document.getElementById('details-body');
-    tbody.innerHTML = '';
-    
+    let correctCount = 0;
     const detailedData = quizData.map((q, i) => {
-        const res = sessionResults[i];
-        const isCorrect = res.selected === q.correct;
-        
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${i+1}</td>
-            <td><span class="badge ${isCorrect ? 'badge-success' : 'badge-error'}">${isCorrect ? 'Correct' : 'Incorrect'}</span></td>
-            <td>${q.options[res.selected]}</td>
-            <td>${res.timeSpent}s</td>
-        `;
-        tbody.appendChild(tr);
-
+        const userSel = sessionResults[i] ? sessionResults[i].selected : -1;
+        const isCorrect = userSel === q.correct;
+        if(isCorrect) correctCount++;
         return {
             question: q.q,
-            userAnswer: q.options[res.selected],
-            isCorrect: isCorrect,
-            time: res.timeSpent
+            options: q.options,
+            userAnswer: userSel !== -1 ? q.options[userSel] : "No Answer",
+            correctAnswer: q.options[q.correct],
+            isCorrect: isCorrect
         };
     });
 
-    const scenarioAnswers = {
-        title: selectedScenario.title,
-        security: secAns,
-        sdlc: sdlcAns,
-        hci: hciAns
-    };
+    const mcqScore = correctCount * 1.5;
+    const totalTime = Math.round((Date.now() - totalStartTime) / 1000);
 
-    saveToDatabase(mcqScore, totalTime, detailedData, scenarioAnswers);
+    document.getElementById('final-score').innerText = mcqScore;
+    document.getElementById('total-time').innerText = totalTime + 's';
+
+    saveToDatabase(mcqScore, totalTime, detailedData, scenarioAns);
 }
 
-function saveToDatabase(scorePerc, totalTime, detailedData, scenarioAnswers) {
+function saveToDatabase(mcqScore, totalTime, details, scenario) {
     if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-        const db = firebase.database();
-        const newEntryRef = db.ref('quiz_results').push();
-        newEntryRef.set({
+        firebase.database().ref('quiz_results').push({
             user: userData,
-            mcqScore: scorePerc,
-            totalScore: scorePerc, // Starts as MCQ score only
+            mcqScore: mcqScore,
+            totalScore: mcqScore, 
             scenarioScore: 0,
             isGraded: false,
             totalTime: totalTime,
-            details: detailedData,
-            scenario: scenarioAnswers,
+            details: details,
+            scenario: scenario,
             timestamp: new Date().toISOString()
-        }).then(() => console.log("Data saved to Firebase"));
+        });
     }
 }
-
-

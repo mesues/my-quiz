@@ -3,15 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Mastery Quiz</title>
+    <title>English Mastery Quiz (40 Pts)</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .nav-btns { display: flex; justify-content: space-between; margin-top: 20px; gap: 10px; }
+        .btn-nav { flex: 1; background: #95a5a6; padding: 10px; border: none; color: white; border-radius: 8px; cursor: pointer; }
+        .btn-nav:hover { background: #7f8c8d; }
+    </style>
 </head>
 <body>
     <div class="container">
         <!-- Login Screen -->
         <div id="login-screen">
             <h1>English Mastery Quiz</h1>
-            <p style="text-align:center;">Please enter your details to begin the exam.</p>
+            <p style="text-align:center;">Total Score: 40 Points (30 MCQ + 10 Scenario)</p>
             <div class="form-group">
                 <label>First Name</label>
                 <input type="text" id="fname" placeholder="Enter your first name">
@@ -22,42 +27,45 @@
             </div>
             <div class="form-group">
                 <label>Class / Group</label>
-                <input type="text" id="class-info" placeholder="e.g. 10-A, 12-B">
+                <input type="text" id="class-info" placeholder="e.g. 10-A">
             </div>
-            <button id="start-btn" class="btn-main">Start Quiz</button>
+            <button id="start-btn" class="btn-main">Start Exam</button>
         </div>
 
         <!-- Quiz Screen -->
         <div id="quiz-screen" class="hidden">
             <div class="quiz-header">
-                <div>Question: <span id="q-count">1/5</span></div>
+                <div>Question: <span id="q-count">1/20</span></div>
                 <div>Timer: <span id="q-timer">0s</span></div>
             </div>
             <div class="question-card">
-                <h2 id="question-text">Loading question...</h2>
+                <h2 id="question-text">Loading...</h2>
                 <div id="options-grid" class="options-grid"></div>
             </div>
-            <button id="next-btn" class="btn-main hidden">Next Question</button>
+            <div class="nav-btns">
+                <button id="prev-btn" class="btn-nav">◄ Previous</button>
+                <button id="next-btn" class="btn-nav">Next ►</button>
+            </div>
         </div>
 
         <!-- Scenario Screen -->
         <div id="scenario-screen" class="hidden">
-            <h1>Part B: Scenario Task</h1>
+            <h1>Part B: Scenario Task (10 Pts)</h1>
             <div class="report-section">
                 <h3 id="scenario-title">Scenario Name</h3>
                 <p id="scenario-desc" style="font-style: italic; color: #666;"></p>
                 <hr>
                 <div class="form-group">
-                    <label>1. Security (5 pts): Name one security risk for this system and how to fix it.</label>
-                    <textarea id="ans-security" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"></textarea>
+                    <label>1. Security Risk & Solution:</label>
+                    <textarea id="ans-security" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>2. SDLC (10 pts): Describe what happens in the Design and Testing phases for this specific project.</label>
-                    <textarea id="ans-sdlc" rows="4" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"></textarea>
+                    <label>2. Design & Testing Phases:</label>
+                    <textarea id="ans-sdlc" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>3. HCI (5 pts): Suggest one way to make the User Interface (UI) easy to use for a beginner.</label>
-                    <textarea id="ans-hci" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;"></textarea>
+                    <label>3. HCI / UI Improvement:</label>
+                    <textarea id="ans-hci" rows="3"></textarea>
                 </div>
             </div>
             <button id="submit-scenario-btn" class="btn-main">Submit Final Exam</button>
@@ -65,44 +73,22 @@
 
         <!-- Result Screen -->
         <div id="result-screen" class="hidden">
-            <h1>Exam Report</h1>
-            
-            <!-- Part 1: Summary -->
+            <h1>Exam Completed</h1>
             <div class="report-section">
-                <h3>Part 1: Performance Summary</h3>
+                <h3>Performance Summary</h3>
                 <div class="summary-grid">
                     <div class="stat-card">
-                        <div class="stat-label">Final Score</div>
-                        <div id="final-score" class="stat-val">0%</div>
+                        <div class="stat-label">MCQ Score (30)</div>
+                        <div id="final-score" class="stat-val">0</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Correct/Total</div>
-                        <div id="correct-count" class="stat-val">0/5</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Total Time</div>
+                        <div class="stat-label">Time</div>
                         <div id="total-time" class="stat-val">0s</div>
                     </div>
                 </div>
+                <p style="text-align:center; color:#e67e22; font-weight:bold; margin-top:15px;">Your Scenario answers have been sent for grading (Max 10 Pts).</p>
             </div>
-
-            <!-- Part 2: Detailed Review -->
-            <div class="report-section">
-                <h3>Part 2: Question Breakdown</h3>
-                <table class="detail-table">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>Status</th>
-                            <th>Your Answer</th>
-                            <th>Time</th>
-                        </tr>
-                    </thead>
-                    <tbody id="details-body"></tbody>
-                </table>
-            </div>
-
-            <button onclick="location.reload()" class="btn-main" style="margin-top:20px; background:#7f8c8d;">Retake Quiz</button>
+            <button onclick="location.reload()" class="btn-main" style="margin-top:20px; background:#7f8c8d;">Close</button>
         </div>
 
         <div style="text-align: center; margin-top: 50px; opacity: 0.5;">
@@ -110,11 +96,8 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    
-    <!-- Config and Logic -->
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
 </body>
