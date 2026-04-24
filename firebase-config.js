@@ -1,13 +1,12 @@
 // Firebase Configuration
 // Replace with your actual credentials from Firebase Console
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDtGWdc5Z5rtxxjg4-JBtZr-rxTF7grSJw",
+  authDomain: "my-simple-quiz.firebaseapp.com",
+  projectId: "my-simple-quiz",
+  storageBucket: "my-simple-quiz.firebasestorage.app",
+  messagingSenderId: "205143468934",
+  appId: "1:205143468934:web:0e38b42a92a3f96e889a07"
 };
 
 // Initialize Firebase
