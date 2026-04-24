@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Quiz Results</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container { max-width: 1000px; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .results-table th, .results-table td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        .results-table th { background-color: var(--primary); color: white; }
+        .row-detail { background-color: #f1f1f1; display: none; }
+        .expand-btn { cursor: pointer; color: var(--accent); font-weight: bold; }
+        .login-box { max-width: 400px; margin: 100px auto; padding: 30px; border-radius: 10px; background: white; box-shadow: var(--shadow); }
+    </style>
+</head>
+<body>
+    <div class="container admin-container">
+        <!-- Admin Login -->
+        <div id="admin-login" class="login-box">
+            <h2 style="text-align:center;">Admin Login</h2>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="admin-password" placeholder="Enter password">
+            </div>
+            <button id="login-btn" class="btn-main">Login</button>
+            <p id="login-error" style="color:red; text-align:center; display:none;">Incorrect password!</p>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="admin-dashboard" class="hidden">
+            <h1>Student Quiz Results</h1>
+            <div style="text-align: right; margin-bottom: 20px;">
+                <button onclick="location.reload()" class="btn-main" style="width:auto; padding: 10px 20px;">Refresh Data</button>
+            </div>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Student Name</th>
+                        <th>Class</th>
+                        <th>Score</th>
+                        <th>Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-tbody">
+                    <!-- Data will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const loginBox = document.getElementById('admin-login');
+        const dashboard = document.getElementById('admin-dashboard');
+        const passwordInput = document.getElementById('admin-password');
+        const loginError = document.getElementById('login-error');
+
+        document.getElementById('login-btn').onclick = () => {
+            if (passwordInput.value === 'admin') {
+                loginBox.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                loadResults();
+            } else {
+                loginError.style.display = 'block';
+            }
+        };
+
+        function loadResults() {
+            if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
+                alert("Firebase not configured correctly in firebase-config.js");
+                return;
+            }
+
+            const db = firebase.database();
+            const resultsRef = db.ref('quiz_results');
+
+            resultsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const tbody = document.getElementById('admin-tbody');
+                tbody.innerHTML = '';
+
+                if (!data) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No results found yet.</td></tr>';
+                    return;
+                }
+
+                // Convert to array and sort by timestamp desc
+                const items = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                items.forEach(item => {
+                    const date = new Date(item.timestamp).toLocaleString();
+                    const rowId = `details-${item.id}`;
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${date}</td>
+                        <td>${item.user.fname} ${item.user.lname}</td>
+                        <td>${item.user.classInfo}</td>
+                        <td><strong>${item.score}%</strong></td>
+                        <td>${item.totalTime}s</td>
+                        <td><span class="expand-btn" onclick="toggleDetails('${rowId}')">View Details ▼</span></td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    // Detailed breakdown row
+                    const detailTr = document.createElement('tr');
+                    detailTr.id = rowId;
+                    detailTr.className = 'row-detail';
+                    
+                    let detailsHtml = '<td colspan="6"><table style="width:100%; font-size:0.9rem;">';
+                    detailsHtml += '<tr><th>Question</th><th>User Answer</th><th>Result</th><th>Time</th></tr>';
+                    
+                    item.details.forEach(det => {
+                        detailsHtml += `
+                            <tr>
+                                <td>${det.question}</td>
+                                <td>${det.userAnswer}</td>
+                                <td style="color:${det.isCorrect ? 'green' : 'red'}">${det.isCorrect ? 'Correct' : 'Incorrect'}</td>
+                                <td>${det.time}s</td>
+                            </tr>
+                        `;
+                    });
+                    detailsHtml += '</table></td>';
+                    detailTr.innerHTML = detailsHtml;
+                    tbody.appendChild(detailTr);
+                });
+            });
+        }
+
+        function toggleDetails(id) {
+            const el = document.getElementById(id);
+            el.style.display = (el.style.display === 'table-row') ? 'none' : 'table-row';
+        }
+    </script>
+</body>
+</html>
