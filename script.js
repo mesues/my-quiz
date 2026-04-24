@@ -110,48 +110,36 @@ function showScenario() {
     document.getElementById('scenario-desc').innerText = selectedScenario.desc;
 }
 
-function finishQuiz() {
-    const scenarioAns = {
-        title: selectedScenario.title,
-        security: document.getElementById('ans-security').value.trim(),
-        sdlc: document.getElementById('ans-sdlc').value.trim(),
-        hci: document.getElementById('ans-hci').value.trim()
-    };
-
-    if(!scenarioAns.security || !scenarioAns.sdlc || !scenarioAns.hci) { alert("Please complete Scenario questions!"); return; }
-
-    scenarioScreen.classList.add('hidden');
-    resultScreen.classList.remove('hidden');
-
-    let correctCount = 0;
-    const detailedData = quizData.map((q, i) => {
-        const userSel = sessionResults[i] ? sessionResults[i].selected : -1;
-        const isCorrect = userSel === q.correct;
-        if(isCorrect) correctCount++;
-        return {
-            question: q.q,
-            options: q.options,
-            userAnswer: userSel !== -1 ? q.options[userSel] : "No Answer",
-            correctAnswer: q.options[q.correct],
-            isCorrect: isCorrect
-        };
-    });
-
-    const mcqScore = correctCount * 1.5;
-    const totalTime = Math.round((Date.now() - totalStartTime) / 1000);
-
-    document.getElementById('final-score').innerText = mcqScore;
-    document.getElementById('total-time').innerText = totalTime + 's';
-
-    saveToDatabase(mcqScore, totalTime, detailedData, scenarioAns);
+function getGrade(score) {
+    if (score <= 10) return 4;
+    if (score <= 15) return 5;
+    if (score <= 20) return 6;
+    if (score <= 25) return 7;
+    if (score <= 30) return 8;
+    if (score <= 36) return 9;
+    return 10;
 }
 
-function saveToDatabase(mcqScore, totalTime, details, scenario) {
+function finishQuiz() {
+    // ... (existing logic)
+    const mcqScore = correctCount * 1.5;
+    const currentGrade = getGrade(mcqScore);
+    const totalTime = Math.round((Date.now() - totalStartTime) / 1000);
+
+    document.getElementById('final-score').innerText = mcqScore + " (Grade: " + currentGrade + ")";
+    document.getElementById('total-time').innerText = totalTime + 's';
+
+    saveToDatabase(mcqScore, currentGrade, totalTime, detailedData, scenarioAns);
+}
+
+function saveToDatabase(mcqScore, currentGrade, totalTime, details, scenario) {
     if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
         firebase.database().ref('quiz_results').push({
             user: userData,
             mcqScore: mcqScore,
             totalScore: mcqScore, 
+            mcqGrade: currentGrade,
+            totalGrade: currentGrade,
             scenarioScore: 0,
             isGraded: false,
             totalTime: totalTime,
