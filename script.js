@@ -37,8 +37,25 @@ const examHeader = document.getElementById('exam-header');
 
 document.getElementById('start-btn').onclick = startQuiz;
 document.getElementById('prev-btn').onclick = () => { if(currentQ > 0) { currentQ--; loadQuestion(); } };
-document.getElementById('next-btn').onclick = () => { if(currentQ < quizData.length - 1) { currentQ++; loadQuestion(); } else { showScenario(); } };
+document.getElementById('next-btn').onclick = () => { 
+    if(currentQ < quizData.length - 1) { 
+        currentQ++; loadQuestion(); 
+    } else { 
+        confirmScenarioTransition(); 
+    } 
+};
 document.getElementById('submit-scenario-btn').onclick = finishQuiz;
+
+function confirmScenarioTransition() {
+    const msg = "You are about to finish the Multiple Choice section and move to the Scenario Task.\n\n" +
+                "Please review your answers now using the 'Previous' and 'Next' buttons if needed. " +
+                "Once you proceed to the scenario, your choices for this section cannot be changed.\n\n" +
+                "Ready to proceed?";
+    
+    if (confirm(msg)) {
+        showScenario();
+    }
+}
 
 function startQuiz() {
     userData.fname = document.getElementById('fname').value.trim();
@@ -108,7 +125,7 @@ function selectOption(qIdx, originalOptIdx) {
             currentQ++;
             loadQuestion();
         } else {
-            showScenario();
+            confirmScenarioTransition();
         }
     }, 400);
 }

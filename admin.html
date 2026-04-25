@@ -53,8 +53,8 @@
                         <tr>
                             <th>Student Name</th>
                             <th>Class</th>
-                            <th>MCQ (30)</th>
-                            <th>SC (10)</th>
+                            <th>MCQ (20)</th>
+                            <th>SC (20)</th>
                             <th>Total</th>
                             <th>Grade</th>
                             <th>Status</th>
@@ -121,7 +121,7 @@
                     item.studentChoices.forEach((choice, i) => {
                         if (choice.userAnswerIndex === answerKey[i]) correctCount++;
                     });
-                    const mcqPoints = correctCount * 1.5;
+                    const mcqPoints = correctCount * 1;
                     const scPoints = item.scenarioScore || 0;
                     const totalPoints = mcqPoints + scPoints;
                     const finalGrade = getGrade(totalPoints);
@@ -175,8 +175,8 @@
                                     <p><strong>HCI:</strong> ${item.scenario.hci}</p>
                                 </div>
                                 <div style="background: #f8fafc; padding: 20px; border-radius: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #e2e8f0;">
-                                    <strong>Assign Scenario Score (0-10):</strong>
-                                    <input type="number" id="sc-grade-${key}" max="10" min="0" value="${scPoints}" style="width:70px; padding:8px; border-radius:8px; border:1px solid #cbd5e1;">
+                                    <strong>Assign Scenario Score (0-20):</strong>
+                                    <input type="number" id="sc-grade-${key}" max="20" min="0" value="${scPoints}" style="width:70px; padding:8px; border-radius:8px; border:1px solid #cbd5e1;">
                                     <button class="btn-main" style="width:auto; margin:0; padding:10px 20px;" onclick="submitGrade('${key}', ${mcqPoints})">Save Grade</button>
                                 </div>
                                 <h4 style="margin: 30px 0 10px 0; font-size: 1rem; color: #64748b;">Multiple Choice Breakdown</h4>
