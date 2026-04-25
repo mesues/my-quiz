@@ -7,10 +7,10 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Sticky Exam Header (Hidden until login) -->
+    <!-- Sticky Exam Header -->
     <div id="exam-header" class="hidden">
         <div><span id="header-student-name">Name Surname</span> (<span id="header-class">Class</span>)</div>
-        <div style="opacity: 0.8; font-size: 0.8rem;">Turgut Ozal High School - 12 ICT Summative</div>
+        <div style="opacity: 0.8; font-size: 0.65rem; text-align: right; max-width: 300px; line-height: 1.2;">turgut ozal high school 12 a,b,c ict elective summative work 2025-2026/3rd trimester</div>
     </div>
 
     <div class="container">
@@ -77,21 +77,17 @@
 
         <!-- Result Screen -->
         <div id="result-screen" class="hidden">
-            <h1>Exam Completed</h1>
-            <div class="report-section">
-                <div class="summary-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center;">
-                    <div class="stat-card" style="padding:15px; background:#f9f9f9; border-radius:10px;">
-                        <div style="font-size:0.8rem; color:#888;">Score (Out of 30)</div>
-                        <div id="final-score" style="font-size:1.5rem; font-weight:bold; color:var(--accent);">0</div>
-                    </div>
-                    <div class="stat-card" style="padding:15px; background:#f9f9f9; border-radius:10px;">
-                        <div style="font-size:0.8rem; color:#888;">Total Time</div>
-                        <div id="total-time" style="font-size:1.5rem; font-weight:bold; color:var(--accent);">0s</div>
-                    </div>
+            <h1 style="color: var(--success);">Exam Successfully Submitted!</h1>
+            <div class="report-section" style="text-align: center; padding: 40px 20px;">
+                <p style="font-size: 1.1rem; line-height: 1.6; color: var(--primary);">
+                    Thank you for completing the ICT Summative Exam.<br><br>
+                    Your multiple-choice responses and scenario answers have been securely recorded. 
+                    <strong>Your final grade will be provided after the teacher evaluates the scenario section (Max 10 Pts).</strong>
+                </p>
+                <div style="margin-top: 30px; font-size: 0.9rem; color: #7f8c8d;">
+                    You may now close this window.
                 </div>
-                <p style="text-align:center; color:#e67e22; font-weight:bold; margin-top:15px; font-size: 0.9rem;">Your Scenario answers have been sent for grading (Max 10 Pts).</p>
             </div>
-            <button onclick="location.reload()" class="btn-main" style="margin-top:20px; background:#7f8c8d;">Close</button>
         </div>
     </div>
 

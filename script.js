@@ -43,34 +43,28 @@ const scenarioScreen = document.getElementById('scenario-screen');
 const resultScreen = document.getElementById('result-screen');
 const examHeader = document.getElementById('exam-header');
 
-// Login Enter Key Support
+// Enter Key Support
 [document.getElementById('fname'), document.getElementById('lname'), document.getElementById('class-info')].forEach(el => {
     el.addEventListener('keydown', (e) => { if(e.key === 'Enter') startQuiz(); });
 });
 
 document.getElementById('start-btn').onclick = startQuiz;
-document.getElementById('prev-btn').onclick = () => { if(currentQ > 0) { currentQ--; loadQuestion(); } };
-document.getElementById('next-btn').onclick = () => { if(currentQ < quizData.length - 1) { currentQ++; loadQuestion(); } else { showScenario(); } };
+document.getElementById('prev-btn').onclick = function() { if(currentQ > 0) { currentQ--; loadQuestion(); } };
+document.getElementById('next-btn').onclick = function() { if(currentQ < quizData.length - 1) { currentQ++; loadQuestion(); } else { showScenario(); } };
 document.getElementById('submit-scenario-btn').onclick = finishQuiz;
 
 function startQuiz() {
     userData.fname = document.getElementById('fname').value.trim();
     userData.lname = document.getElementById('lname').value.trim();
     userData.classInfo = document.getElementById('class-info').value.trim();
+    if (!userData.fname || !userData.lname || !userData.classInfo) { alert("Please fill all details!"); return; }
 
-    if (!userData.fname || !userData.lname || !userData.classInfo) {
-        alert("Please fill all student details.");
-        return;
-    }
-
-    // Populate Header
     document.getElementById('header-student-name').innerText = userData.fname + " " + userData.lname;
     document.getElementById('header-class').innerText = userData.classInfo;
     
     loginScreen.classList.add('hidden');
     examHeader.classList.remove('hidden');
     quizScreen.classList.remove('hidden');
-    
     totalStartTime = Date.now();
     loadQuestion();
     startGlobalTimer();
@@ -88,10 +82,8 @@ function loadQuestion() {
     const q = quizData[currentQ];
     document.getElementById('q-count').innerText = `${currentQ + 1}/${quizData.length}`;
     document.getElementById('question-text').innerText = q.q;
-    
     const grid = document.getElementById('options-grid');
     grid.innerHTML = '';
-    
     q.options.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
@@ -105,14 +97,9 @@ function loadQuestion() {
 function selectOption(index) {
     sessionResults[currentQ] = { selected: index };
     loadQuestion();
-    
     setTimeout(() => {
-        if(currentQ < quizData.length - 1) {
-            currentQ++;
-            loadQuestion();
-        } else {
-            showScenario();
-        }
+        if(currentQ < quizData.length - 1) { currentQ++; loadQuestion(); } 
+        else { showScenario(); }
     }, 400);
 }
 
@@ -120,7 +107,6 @@ function showScenario() {
     clearInterval(timerInterval);
     quizScreen.classList.add('hidden');
     scenarioScreen.classList.remove('hidden');
-    
     selectedScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
     document.getElementById('scenario-title').innerText = "Scenario: " + selectedScenario.title;
     document.getElementById('scenario-desc').innerText = selectedScenario.desc;
@@ -143,14 +129,11 @@ function finishQuiz() {
         sdlc: document.getElementById('ans-sdlc').value.trim(),
         hci: document.getElementById('ans-hci').value.trim()
     };
-
-    if(!scenarioAns.security || !scenarioAns.sdlc || !scenarioAns.hci) {
-        alert("Please complete the scenario questions before submitting.");
-        return;
-    }
+    if(!scenarioAns.security || !scenarioAns.sdlc || !scenarioAns.hci) { alert("Please complete scenario!"); return; }
 
     scenarioScreen.classList.add('hidden');
     resultScreen.classList.remove('hidden');
+    // Header stays visible as it was removed from 'hidden' above
 
     let correctCount = 0;
     const detailedData = quizData.map((q, i) => {
@@ -170,9 +153,6 @@ function finishQuiz() {
     const initialGrade = getGrade(mcqScore);
     const totalTime = Math.round((Date.now() - totalStartTime) / 1000);
 
-    document.getElementById('final-score').innerText = mcqScore + " (Grade: " + initialGrade + ")";
-    document.getElementById('total-time').innerText = totalTime + 's';
-
     saveToDatabase(mcqScore, initialGrade, totalTime, detailedData, scenarioAns);
 }
 
@@ -181,7 +161,7 @@ function saveToDatabase(mcqScore, initialGrade, totalTime, details, scenario) {
         firebase.database().ref('quiz_results').push({
             user: userData,
             mcqScore: mcqScore,
-            totalScore: mcqScore,
+            totalScore: mcqScore, 
             mcqGrade: initialGrade,
             totalGrade: initialGrade,
             scenarioScore: 0,

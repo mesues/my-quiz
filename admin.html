@@ -63,6 +63,10 @@
     <script src="firebase-config.js"></script>
 
     <script>
+        document.getElementById('admin-password').addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') document.getElementById('login-btn').click();
+        });
+
         document.getElementById('login-btn').onclick = () => {
             if (document.getElementById('admin-password').value === 'admin') {
                 document.getElementById('admin-login').classList.add('hidden');
