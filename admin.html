@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Total 40 Pts</title>
+    <title>Teacher Dashboard - Quiz Results</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-container { max-width: 1200px; }
-        .results-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .admin-container { max-width: 1200px; width: 95%; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
         .results-table th, .results-table td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        .results-table th { background-color: var(--primary); color: white; }
+        .results-table th { background-color: var(--primary); color: white; white-space: nowrap; }
         .row-detail { background-color: #fcfcfc; display: none; }
-        .grading-box { background: white; padding: 20px; border: 2px solid var(--accent); border-radius: 12px; margin: 10px 0; }
+        .grading-box { background: white; padding: 20px; border: 2px solid var(--accent); border-radius: 12px; margin: 10px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .mcq-review { border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; }
-        .mcq-item { margin-bottom: 10px; font-size: 0.9rem; }
-        .correct { color: green; font-weight: bold; }
-        .wrong { color: red; font-weight: bold; }
+        .mcq-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
+        .correct { color: #27ae60; font-weight: bold; }
+        .wrong { color: #e74c3c; font-weight: bold; }
         .btn-email { background-color: #e67e22; }
+        .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .bg-pending { background: #fff3cd; color: #856404; }
+        .bg-graded { background: #d4edda; color: #155724; }
     </style>
 </head>
 <body>
@@ -33,13 +36,19 @@
         <!-- Dashboard -->
         <div id="admin-dashboard" class="hidden">
             <h1>Teacher Dashboard (Max 40 Pts)</h1>
+            <div style="text-align: right; margin-bottom: 10px;">
+                <button onclick="location.reload()" class="btn-main" style="width:auto; padding: 10px 20px;">Refresh Data</button>
+            </div>
             <table class="results-table">
                 <thead>
                     <tr>
-                        <th>Student</th>
+                        <th>Date</th>
+                        <th>Student Name</th>
+                        <th>Class</th>
                         <th>MCQ (30)</th>
                         <th>Scenario (10)</th>
                         <th>Total (40)</th>
+                        <th>Grade</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -59,6 +68,8 @@
                 document.getElementById('admin-login').classList.add('hidden');
                 document.getElementById('admin-dashboard').classList.remove('hidden');
                 loadResults();
+            } else {
+                alert("Incorrect password!");
             }
         };
 
@@ -77,19 +88,26 @@
                 const data = snapshot.val();
                 const tbody = document.getElementById('admin-tbody');
                 tbody.innerHTML = '';
-                if (!data) return;
+                if (!data) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">No data found.</td></tr>';
+                    return;
+                }
 
                 Object.keys(data).sort((a,b) => new Date(data[b].timestamp) - new Date(data[a].timestamp)).forEach(key => {
                     const item = data[key];
+                    const date = new Date(item.timestamp).toLocaleString('tr-TR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
                     const tr = document.createElement('tr');
+                    
                     tr.innerHTML = `
+                        <td>${date}</td>
                         <td>${item.user.fname} ${item.user.lname}</td>
+                        <td>${item.user.classInfo}</td>
                         <td>${item.mcqScore}</td>
                         <td>${item.scenarioScore || 0}</td>
                         <td><strong>${item.totalScore || item.mcqScore}</strong></td>
-                        <td style="font-weight:bold; color:var(--accent);">Grade: ${item.totalGrade || item.mcqGrade}</td>
-                        <td style="color:${item.isGraded ? 'green' : 'red'}">${item.isGraded ? 'Graded' : 'Pending'}</td>
-                        <td><button class="btn-main" style="width:auto; padding:5px 10px;" onclick="toggleDetails('${key}')">Details ▼</button></td>
+                        <td style="font-weight:bold; color:var(--accent);">${item.totalGrade || item.mcqGrade}</td>
+                        <td><span class="badge-status ${item.isGraded ? 'bg-graded' : 'bg-pending'}">${item.isGraded ? 'Graded' : 'Pending'}</span></td>
+                        <td><button class="btn-main" style="width:auto; padding:5px 12px; font-size:0.8rem;" onclick="toggleDetails('${key}')">Details ▼</button></td>
                     `;
                     tbody.appendChild(tr);
 
@@ -97,26 +115,29 @@
                     detailTr.id = `details-${key}`;
                     detailTr.className = 'row-detail';
                     
-                    let mcqHtml = `<div class="mcq-review"><h4>MCQ Full Breakdown (Part A)</h4>`;
+                    let mcqHtml = `<div class="mcq-review"><h4>Part A: MCQ Full Breakdown</h4>`;
                     item.details.forEach((det, i) => {
-                        mcqHtml += `<div class="mcq-item">${i+1}. ${det.question}<br>
+                        mcqHtml += `<div class="mcq-item">
+                                    <strong>${i+1}. ${det.question}</strong><br>
                                     - Answer: <span class="${det.isCorrect ? 'correct' : 'wrong'}">${det.userAnswer}</span> 
                                     ${!det.isCorrect ? '(Correct: '+det.correctAnswer+')' : ''}</div>`;
                     });
                     mcqHtml += `</div>`;
 
                     detailTr.innerHTML = `
-                        <td colspan="7">
+                        <td colspan="9">
                             <div class="grading-box">
-                                <h3>Scenario: ${item.scenario.title}</h3>
-                                <p><strong>Security:</strong> ${item.scenario.security}</p>
-                                <p><strong>SDLC:</strong> ${item.scenario.sdlc}</p>
-                                <p><strong>HCI:</strong> ${item.scenario.hci}</p>
+                                <h3 style="margin-top:0;">Scenario: ${item.scenario.title}</h3>
+                                <p><strong>1. Security:</strong> ${item.scenario.security}</p>
+                                <p><strong>2. SDLC:</strong> ${item.scenario.sdlc}</p>
+                                <p><strong>3. HCI:</strong> ${item.scenario.hci}</p>
                                 <hr>
-                                <h4>Grade Scenario (Max 10 Pts)</h4>
-                                <input type="number" id="sc-grade-${key}" max="10" min="0" value="${item.scenarioScore || 0}" style="width:80px; padding:8px;">
-                                <button class="btn-main" style="width:auto; padding:8px 20px; margin-left:10px;" onclick="submitGrade('${key}', ${item.mcqScore})">Save Grade</button>
-                                <button class="btn-main btn-email" style="width:auto; padding:8px 20px; margin-left:10px;" onclick="sendEmailManual('${key}')">Send Email Report</button>
+                                <h4>Grading (Max 10 Pts)</h4>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <input type="number" id="sc-grade-${key}" max="10" min="0" value="${item.scenarioScore || 0}" style="width:80px; padding:10px; border:1px solid #ccc; border-radius:5px;">
+                                    <button class="btn-main" style="width:auto; padding:10px 20px;" onclick="submitGrade('${key}', ${item.mcqScore})">Save Grade & Update Total</button>
+                                    <button class="btn-main btn-email" style="width:auto; padding:10px 20px;" onclick="sendEmailManual('${key}')">Send Full Email Report</button>
+                                </div>
                                 ${mcqHtml}
                             </div>
                         </td>
@@ -126,8 +147,19 @@
             });
         }
 
+        function toggleDetails(id) {
+            const el = document.getElementById(`details-${id}`);
+            const isVisible = el.style.display === 'table-row';
+            // Close all others
+            document.querySelectorAll('.row-detail').forEach(row => row.style.display = 'none');
+            // Toggle current
+            el.style.display = isVisible ? 'none' : 'table-row';
+        }
+
         function submitGrade(id, mcqScore) {
             const scScore = parseFloat(document.getElementById(`sc-grade-${id}`).value) || 0;
+            if(scScore > 10) { alert("Max scenario score is 10!"); return; }
+            
             const totalScore = mcqScore + scScore;
             const finalGrade = getGrade(totalScore);
 
@@ -136,31 +168,36 @@
                 totalScore: totalScore,
                 totalGrade: finalGrade,
                 isGraded: true
-            }).then(() => alert("Grade Updated! Total Grade: " + finalGrade));
+            }).then(() => alert("Grade successfully updated! Total: " + totalScore + " (Grade: " + finalGrade + ")"));
         }
 
         function sendEmailManual(id) {
             firebase.database().ref('quiz_results/' + id).once('value', (snapshot) => {
                 const item = snapshot.val();
-                let report = `STUDENT REPORT: ${item.user.fname} ${item.user.lname}\n`;
+                let report = `EXAM REPORT: ${item.user.fname} ${item.user.lname}\n`;
+                report += `CLASS: ${item.user.classInfo}\n`;
                 report += `FINAL GRADE: ${item.totalGrade || item.mcqGrade}\n`;
-                report += `Total Score: ${item.totalScore || item.mcqScore}/40\n\n`;
-                // ... rest of email logic ...
+                report += `TOTAL SCORE: ${item.totalScore || item.mcqScore}/40\n`;
+                report += `(MCQ: ${item.mcqScore}/30, Scenario: ${item.scenarioScore || 0}/10)\n\n`;
+                
                 report += `--- PART A: MCQ DETAILS ---\n`;
                 item.details.forEach((det, i) => {
                     report += `${i+1}. ${det.question}\n   Ans: ${det.userAnswer} (${det.isCorrect ? 'CORRECT' : 'INCORRECT'})\n`;
                 });
+                
                 report += `\n--- PART B: SCENARIO (${item.scenario.title}) ---\n`;
-                report += `Security: ${item.scenario.security}\nSDLC: ${item.scenario.sdlc}\nHCI: ${item.scenario.hci}\n`;
+                report += `Security Answer: ${item.scenario.security}\n`;
+                report += `SDLC Answer: ${item.scenario.sdlc}\n`;
+                report += `HCI Answer: ${item.scenario.hci}\n`;
 
                 fetch("https://formsubmit.co/ajax/mesuesinformatike@gmail.com", {
                     method: "POST",
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        _subject: `Quiz Result: ${item.user.fname} ${item.user.lname}`,
-                        "Final Report": report
+                        _subject: `Quiz Result: ${item.user.fname} ${item.user.lname} (Grade: ${item.totalGrade || item.mcqGrade})`,
+                        "Detailed Report": report
                     })
-                }).then(() => alert("Detailed Email Sent!"));
+                }).then(() => alert("Detailed report sent to your email!"));
             });
         }
     </script>
