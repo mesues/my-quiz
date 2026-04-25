@@ -44,7 +44,13 @@
 
         <div id="admin-dashboard" class="hidden">
             <div class="dashboard-card">
-                <h1>Exam Management (Max 40 Pts)</h1>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <h1 style="margin: 0; font-size: 1.6rem;">Exam Management (Max 40 Pts)</h1>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="location.reload()" class="action-btn" title="Refresh"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        <button onclick="clearAllResults()" class="action-btn" style="color:#e74c3c;" title="Delete All"><i class="fas fa-exclamation-triangle"></i> Clear All Data</button>
+                    </div>
+                </div>
                 <table class="results-table">
                     <thead>
                         <tr>
@@ -186,26 +192,47 @@
         function sendReport(key, total, grade) {
             db.ref('quiz_results/' + key).once('value', (snap) => {
                 const item = snap.val();
-                let report = `Your teacher has completed the final evaluation of your exam. The detailed results and breakdown are provided below.\n\n`;
-                report += `--- SUMMARY ---\nStudent: ${item.user.fname} ${item.user.lname}\nClass: ${item.user.classInfo}\nFINAL GRADE: ${grade}\nTOTAL SCORE: ${total}/40\n\n`;
-                report += `--- PART A: MULTIPLE CHOICE DETAILS ---\n`;
+                let fullReport = `STUDENT: ${item.user.fname} ${item.user.lname}\n`;
+                fullReport += `CLASS: ${item.user.classInfo}\n`;
+                fullReport += `FINAL GRADE: ${grade}\n`;
+                fullReport += `TOTAL SCORE: ${total}/40\n\n`;
+                
+                fullReport += `--- PART A: MCQ DETAILS ---\n`;
                 item.studentChoices.forEach((det, i) => {
                     const isCorrect = det.userAnswerIndex === answerKey[i];
-                    report += `${i+1}. ${det.question}\n   Your Ans: ${det.userAnswerIndex !== -1 ? det.options[det.userAnswerIndex] : 'No Answer'} (${isCorrect ? 'CORRECT' : 'INCORRECT'})\n`;
+                    fullReport += `${i+1}. ${det.question}\n   Your Ans: ${det.userAnswerIndex !== -1 ? det.options[det.userAnswerIndex] : 'No Answer'} (${isCorrect ? 'CORRECT' : 'INCORRECT'})\n`;
                 });
-                report += `\n--- PART B: SCENARIO (${item.scenario.title}) ---\nSecurity: ${item.scenario.security}\nSDLC: ${item.scenario.sdlc}\nHCI: ${item.scenario.hci}\n\n`;
+                
+                fullReport += `\n--- PART B: SCENARIO (${item.scenario.title}) ---\n`;
+                fullReport += `Security Answer: ${item.scenario.security}\n`;
+                fullReport += `SDLC Answer: ${item.scenario.sdlc}\n`;
+                fullReport += `HCI Answer: ${item.scenario.hci}\n\n`;
+                fullReport += `Evaluation Message: Your teacher has completed the final evaluation. Detailed results are above.`;
 
                 const targetEmail = item.user.email || "mesuesinformatike@gmail.com";
+                
+                // Using a flat structure so FormSubmit definitely shows the content
+                const payload = {
+                    _subject: "Turgut Ozal High School 12 ICT Summative Result",
+                    "Final_Grade": grade,
+                    "Total_Score": `${total}/40`,
+                    "Exam_Report": fullReport,
+                    _cc: "mesuesinformatike@gmail.com",
+                    _template: "table"
+                };
+
                 fetch(`https://formsubmit.co/ajax/${targetEmail}`, {
                     method: "POST",
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        _subject: "Turgut Ozal High School 12 ICT Summative Result",
-                        _message: report, // Custom message for the user
-                        _cc: "mesuesinformatike@gmail.com"
-                    })
-                }).then(() => alert("Detailed report sent to student and you!"));
+                    body: JSON.stringify(payload)
+                }).then(() => alert("Report successfully sent to student and teacher!"));
             });
+        }
+
+        function clearAllResults() {
+            if(confirm("DANGER: This will delete ALL student records permanently. Proceed?")) {
+                db.ref('quiz_results').remove().then(() => alert("All data cleared."));
+            }
         }
     </script>
 </body>
