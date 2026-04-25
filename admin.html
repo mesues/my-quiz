@@ -189,43 +189,62 @@
             db.ref('quiz_results/' + id).update({ scenarioScore: sc, isGraded: true }).then(() => alert("Saved!"));
         }
 
-        function sendReport(key, total, grade) {
+        function sendReport(key, total, grade, mcq) {
             db.ref('quiz_results/' + key).once('value', (snap) => {
                 const item = snap.val();
-                let fullReport = `STUDENT: ${item.user.fname} ${item.user.lname}\n`;
-                fullReport += `CLASS: ${item.user.classInfo}\n`;
-                fullReport += `FINAL GRADE: ${grade}\n`;
-                fullReport += `TOTAL SCORE: ${total}/40\n\n`;
                 
-                fullReport += `--- PART A: MCQ DETAILS ---\n`;
+                let r = `🎓 ICT SUMMATIVE EVALUATION REPORT\n`;
+                r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+                r += `👤 STUDENT: ${item.user.fname} ${item.user.lname}\n`;
+                r += `🏫 CLASS:   ${item.user.classInfo}\n`;
+                r += `🏆 GRADE:   ${grade} / 10\n`;
+                r += `📊 TOTAL:   ${total} / 40\n`;
+                r += `⏱️ TIME:    ${item.totalTime} seconds\n\n`;
+                
+                r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                r += `PART A: MULTIPLE CHOICE QUESTIONS (20 PTS)\n`;
+                r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
                 item.studentChoices.forEach((det, i) => {
                     const isCorrect = det.userAnswerIndex === answerKey[i];
-                    fullReport += `${i+1}. ${det.question}\n   Your Ans: ${det.userAnswerIndex !== -1 ? det.options[det.userAnswerIndex] : 'No Answer'} (${isCorrect ? 'CORRECT' : 'INCORRECT'})\n`;
+                    const icon = isCorrect ? "✅" : "❌";
+                    r += `${String(i + 1).padStart(2, '0')}. ${det.question}\n`;
+                    r += `    ${icon} Your Choice: ${det.userAnswerIndex !== -1 ? det.options[det.userAnswerIndex] : 'NO ANSWER'}\n`;
+                    if (!isCorrect) {
+                        r += `    💡 CORRECT ANSWER: ${det.options[answerKey[i]]}\n`;
+                    }
+                    r += `\n`;
                 });
+
+                r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                r += `PART B: SCENARIO EVALUATION (20 PTS)\n`;
+                r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+                r += `📝 SCENARIO: ${item.scenario.title}\n\n`;
+                r += `1. SECURITY RISK & SOLUTION:\n   "${item.scenario.security}"\n\n`;
+                r += `2. DESIGN & TESTING PHASES:\n   "${item.scenario.sdlc}"\n\n`;
+                r += `3. HCI / UI IMPROVEMENT:\n   "${item.scenario.hci}"\n\n`;
+                r += `✨ TEACHER'S SCENARIO GRADE: ${item.scenarioScore || 0} / 20\n\n`;
                 
-                fullReport += `\n--- PART B: SCENARIO (${item.scenario.title}) ---\n`;
-                fullReport += `Security Answer: ${item.scenario.security}\n`;
-                fullReport += `SDLC Answer: ${item.scenario.sdlc}\n`;
-                fullReport += `HCI Answer: ${item.scenario.hci}\n\n`;
-                fullReport += `Evaluation Message: Your teacher has completed the final evaluation. Detailed results are above.`;
+                r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                r += `Teacher Evaluation: Final processing completed.\n`;
+                r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
 
                 const targetEmail = item.user.email || "mesuesinformatike@gmail.com";
                 
-                // Using a flat structure so FormSubmit definitely shows the content
                 const payload = {
-                    _subject: "Turgut Ozal High School 12 ICT Summative Result",
-                    "Final_Grade": grade,
-                    "Total_Score": `${total}/40`,
-                    "Exam_Report": fullReport,
+                    _subject: `EXAM RESULT: ${item.user.fname} ${item.user.lname} (Grade: ${grade})`,
+                    "STUDENT_NAME": `${item.user.fname} ${item.user.lname}`,
+                    "FINAL_GRADE": `${grade} / 10`,
+                    "REPORT_CONTENT": r,
                     _cc: "mesuesinformatike@gmail.com",
-                    _template: "table"
+                    _template: "table" // This will wrap the data in a clean FormSubmit table
                 };
 
                 fetch(`https://formsubmit.co/ajax/${targetEmail}`, {
                     method: "POST",
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(payload)
-                }).then(() => alert("Report successfully sent to student and teacher!"));
+                }).then(() => alert("Structured report sent to student and teacher!"));
             });
         }
 
