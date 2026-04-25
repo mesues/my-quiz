@@ -2,13 +2,15 @@ let quizData = [];
 let scenarios = [];
 let userData = { fname: "", lname: "", classInfo: "" };
 let currentQ = 0;
-let sessionResults = {}; // Object to store answers by original question index
+let sessionResults = {}; 
 let totalStartTime;
 let timerInterval;
 let selectedScenario = null;
-let displayOrder = []; // Array of shuffled question indices
 
-// Helper to shuffle any array
+// Pre-shuffled data for the session
+let displayOrder = []; // [qIdx, qIdx, ...]
+let optionShuffles = {}; // { qIdx: [optIdx, optIdx, ...] }
+
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -19,17 +21,11 @@ function shuffle(array) {
 
 function initApp() {
     if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
-        alert("System Configuration Error. Please contact teacher.");
+        alert("Configuration Error.");
         return;
     }
     const db = firebase.database();
-    
-    // Fetch Questions and Scenarios
-    db.ref('questions').once('value').then(snap => { 
-        quizData = snap.val(); 
-        // Create an array [0, 1, 2, ... 19] and shuffle it
-        displayOrder = shuffle([...Array(quizData.length).keys()]);
-    });
+    db.ref('questions').once('value').then(snap => { quizData = snap.val(); });
     db.ref('scenarios').once('value').then(snap => { scenarios = snap.val(); });
 }
 
@@ -38,10 +34,6 @@ const quizScreen = document.getElementById('quiz-screen');
 const scenarioScreen = document.getElementById('scenario-screen');
 const resultScreen = document.getElementById('result-screen');
 const examHeader = document.getElementById('exam-header');
-
-[document.getElementById('fname'), document.getElementById('lname'), document.getElementById('class-info')].forEach(el => {
-    el.addEventListener('keydown', (e) => { if(e.key === 'Enter') startQuiz(); });
-});
 
 document.getElementById('start-btn').onclick = startQuiz;
 document.getElementById('prev-btn').onclick = () => { if(currentQ > 0) { currentQ--; loadQuestion(); } };
@@ -54,9 +46,17 @@ function startQuiz() {
     userData.classInfo = document.getElementById('class-info').value.trim();
 
     if (!userData.fname || !userData.lname || !userData.classInfo || quizData.length === 0) {
-        alert("Loading exam data, please wait a second...");
+        alert("Please wait or fill details.");
         return;
     }
+
+    // 1. SHUFFLE EVERYTHING ONCE AT START
+    displayOrder = shuffle([...Array(quizData.length).keys()]);
+    
+    // Shuffle options for each question once
+    displayOrder.forEach(qIdx => {
+        optionShuffles[qIdx] = shuffle([...Array(quizData[qIdx].options.length).keys()]);
+    });
 
     document.getElementById('header-student-name').innerText = userData.fname + " " + userData.lname;
     document.getElementById('header-class').innerText = userData.classInfo;
@@ -79,8 +79,9 @@ function startGlobalTimer() {
 }
 
 function loadQuestion() {
-    const originalIndex = displayOrder[currentQ]; // Get the real question ID
-    const q = quizData[originalIndex];
+    const qIdx = displayOrder[currentQ];
+    const q = quizData[qIdx];
+    const optOrder = optionShuffles[qIdx];
     
     document.getElementById('q-count').innerText = `${currentQ + 1}/${quizData.length}`;
     document.getElementById('question-text').innerText = q.q;
@@ -88,30 +89,19 @@ function loadQuestion() {
     const grid = document.getElementById('options-grid');
     grid.innerHTML = '';
     
-    // Create option objects that remember their original index
-    let optionsWithMeta = q.options.map((opt, idx) => ({ text: opt, originalIdx: idx }));
-    
-    // Shuffle the options visually
-    shuffle(optionsWithMeta);
-
-    optionsWithMeta.forEach((opt) => {
+    optOrder.forEach((originalOptIdx) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        
-        // Check if student already answered THIS original question with THIS original option index
-        if(sessionResults[originalIndex] === opt.originalIdx) {
-            btn.classList.add('selected');
-        }
-        
-        btn.innerText = opt.text;
-        btn.onclick = () => selectOption(originalIndex, opt.originalIdx);
+        if(sessionResults[qIdx] === originalOptIdx) btn.classList.add('selected');
+        btn.innerText = q.options[originalOptIdx];
+        btn.onclick = () => selectOption(qIdx, originalOptIdx);
         grid.appendChild(btn);
     });
 }
 
-function selectOption(qIdx, optIdx) {
-    sessionResults[qIdx] = optIdx; // Store answer against original question ID
-    loadQuestion();
+function selectOption(qIdx, originalOptIdx) {
+    sessionResults[qIdx] = originalOptIdx;
+    loadQuestion(); // Visually update
     
     setTimeout(() => {
         if(currentQ < quizData.length - 1) {
@@ -139,29 +129,23 @@ function finishQuiz() {
         sdlc: document.getElementById('ans-sdlc').value.trim(),
         hci: document.getElementById('ans-hci').value.trim()
     };
-    if(!scenarioAns.security || !scenarioAns.sdlc || !scenarioAns.hci) { alert("Please complete scenario!"); return; }
+    if(!scenarioAns.security || !scenarioAns.sdlc || !scenarioAns.hci) { alert("Complete scenario!"); return; }
 
     scenarioScreen.classList.add('hidden');
     resultScreen.classList.remove('hidden');
 
     const totalTime = Math.round((Date.now() - totalStartTime) / 1000);
-
-    // CRITICAL: Remap the results to original 0-19 order for the Admin panel
     const finalChoices = quizData.map((q, i) => ({
         question: q.q,
         options: q.options,
         userAnswerIndex: sessionResults[i] !== undefined ? sessionResults[i] : -1
     }));
 
-    saveToDatabase(totalTime, finalChoices, scenarioAns);
-}
-
-function saveToDatabase(totalTime, choices, scenario) {
     firebase.database().ref('quiz_results').push({
         user: userData,
         totalTime: totalTime,
-        studentChoices: choices, 
-        scenario: scenario,
+        studentChoices: finalChoices,
+        scenario: scenarioAns,
         isGraded: false,
         timestamp: new Date().toISOString()
     });
