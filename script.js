@@ -50,9 +50,7 @@ function startQuiz() {
     userData.fname = document.getElementById('fname').value.trim();
     userData.lname = document.getElementById('lname').value.trim();
     userData.classInfo = document.getElementById('class-info').value.trim();
-
-    if (!userData.fname || !userData.lname || !userData.classInfo) { alert("Fields required!"); return; }
-
+    if (!userData.fname || !userData.lname || !userData.classInfo) { alert("Please fill in all fields!"); return; }
     loginScreen.classList.add('hidden');
     quizScreen.classList.remove('hidden');
     totalStartTime = Date.now();
@@ -72,10 +70,8 @@ function loadQuestion() {
     const q = quizData[currentQ];
     document.getElementById('q-count').innerText = `${currentQ + 1}/${quizData.length}`;
     document.getElementById('question-text').innerText = q.q;
-    
     const grid = document.getElementById('options-grid');
     grid.innerHTML = '';
-    
     q.options.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
@@ -88,9 +84,7 @@ function loadQuestion() {
 
 function selectOption(index) {
     sessionResults[currentQ] = { selected: index };
-    loadQuestion(); // Show selection
-    
-    // Auto next after short delay
+    loadQuestion();
     setTimeout(() => {
         if(currentQ < quizData.length - 1) {
             currentQ++;
@@ -121,7 +115,35 @@ function getGrade(score) {
 }
 
 function finishQuiz() {
-    // ... (existing logic)
+    const scenarioAns = {
+        title: selectedScenario.title,
+        security: document.getElementById('ans-security').value.trim(),
+        sdlc: document.getElementById('ans-sdlc').value.trim(),
+        hci: document.getElementById('ans-hci').value.trim()
+    };
+
+    if(!scenarioAns.security || !scenarioAns.sdlc || !scenarioAns.hci) { 
+        alert("Please complete Scenario questions!"); 
+        return; 
+    }
+
+    scenarioScreen.classList.add('hidden');
+    resultScreen.classList.remove('hidden');
+
+    let correctCount = 0;
+    const detailedData = quizData.map((q, i) => {
+        const userSel = sessionResults[i] ? sessionResults[i].selected : -1;
+        const isCorrect = userSel === q.correct;
+        if(isCorrect) correctCount++;
+        return {
+            question: q.q,
+            options: q.options,
+            userAnswer: userSel !== -1 ? q.options[userSel] : "No Answer",
+            correctAnswer: q.options[q.correct],
+            isCorrect: isCorrect
+        };
+    });
+
     const mcqScore = correctCount * 1.5;
     const currentGrade = getGrade(mcqScore);
     const totalTime = Math.round((Date.now() - totalStartTime) / 1000);
