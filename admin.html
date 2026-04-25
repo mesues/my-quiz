@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard - Final v3</title>
+    <title>Teacher Dashboard - Premium</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -21,37 +21,34 @@
         .pill-pending { background: #fff7ed; color: #c2410c; }
         .pill-graded { background: #f0fdf4; color: #15803d; }
         .row-detail { display: none; background-color: #fdfdfd; }
-        .grading-box { background: white; padding: 25px; border: 1px solid #e2e8f0; border-radius: 16px; margin: 10px 15px 25px 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        .grading-box { background: white; padding: 25px; border: 1px solid #e2e8f0; border-radius: 16px; margin: 10px 15px 25px 15px; }
         .mcq-review { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 25px; }
-        .mcq-item { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9; font-size: 0.85rem; }
-        .correct { color: #27ae60; font-weight: bold; }
-        .wrong { color: #e74c3c; font-weight: bold; }
+        
+        /* New Conditional Backgrounds for MCQ items */
+        .mcq-item { padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9; font-size: 0.85rem; }
+        .mcq-correct { background-color: #f0fdf4; border-color: #dcfce7; }
+        .mcq-wrong { background-color: #fef2f2; border-color: #fee2e2; }
+        
+        .correct-txt { color: #15803d; font-weight: bold; }
+        .wrong-txt { color: #b91c1c; font-weight: bold; }
         .action-btn { border: none; background: none; cursor: pointer; padding: 8px; color: #64748b; }
-        .action-btn:hover { color: var(--accent); }
     </style>
 </head>
 <body>
     <div class="container admin-container">
-        <!-- Admin Login -->
         <div id="admin-login" class="login-box dashboard-card" style="max-width: 400px; margin: 100px auto;">
-            <h2 style="text-align:center; margin-bottom: 25px;">Teacher Access</h2>
-            <div class="form-group">
-                <input type="password" id="admin-password" placeholder="Password" style="border: 1px solid #e2e8f0; padding: 14px;">
-            </div>
-            <button id="login-btn" class="btn-main" style="padding: 14px; border-radius: 12px;">Unlock Dashboard</button>
+            <h2 style="text-align:center;">Teacher Access</h2>
+            <input type="password" id="admin-password" placeholder="Password" style="margin-bottom:15px; padding:12px;">
+            <button id="login-btn" class="btn-main">Unlock Dashboard</button>
         </div>
 
-        <!-- Dashboard -->
         <div id="admin-dashboard" class="hidden">
             <div class="dashboard-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                    <h1 style="margin: 0; font-size: 1.6rem;">Exam Management</h1>
-                    <button onclick="location.reload()" class="action-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
-                </div>
+                <h1>Exam Management (Max 40 Pts)</h1>
                 <table class="results-table">
                     <thead>
                         <tr>
-                            <th>Student Name</th>
+                            <th>Student Details</th>
                             <th>Class</th>
                             <th>MCQ (20)</th>
                             <th>SC (20)</th>
@@ -75,25 +72,13 @@
         let answerKey = [];
         const db = firebase.database();
 
-        // Restore Enter Key Support
-        document.getElementById('admin-password').addEventListener('keydown', (e) => {
-            if(e.key === 'Enter') document.getElementById('login-btn').click();
-        });
-
+        document.getElementById('admin-password').addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('login-btn').click(); });
         document.getElementById('login-btn').onclick = () => {
             if (document.getElementById('admin-password').value === 'admin') {
-                // Fetch Answer Key first, then load results
-                db.ref('answer_key').once('value').then(snap => {
-                    answerKey = snap.val();
-                    if(!answerKey) {
-                        alert("Error: answer_key not found in Firebase!");
-                        return;
-                    }
-                    document.getElementById('admin-login').classList.add('hidden');
-                    document.getElementById('admin-dashboard').classList.remove('hidden');
-                    loadResults();
-                });
-            } else { alert("Access Denied"); }
+                db.ref('answer_key').once('value').then(snap => { answerKey = snap.val(); loadResults(); });
+                document.getElementById('admin-login').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+            } else { alert("Denied"); }
         };
 
         function getGrade(score) {
@@ -115,12 +100,8 @@
 
                 Object.keys(data).sort((a,b) => new Date(data[b].timestamp) - new Date(data[a].timestamp)).forEach(key => {
                     const item = data[key];
-                    
-                    // Calculate MCQ score dynamically using the Answer Key
                     let correctCount = 0;
-                    item.studentChoices.forEach((choice, i) => {
-                        if (choice.userAnswerIndex === answerKey[i]) correctCount++;
-                    });
+                    item.studentChoices.forEach((choice, i) => { if (choice.userAnswerIndex === answerKey[i]) correctCount++; });
                     const mcqPoints = correctCount * 1;
                     const scPoints = item.scenarioScore || 0;
                     const totalPoints = mcqPoints + scPoints;
@@ -130,7 +111,10 @@
                     tr.className = 'student-row';
                     tr.onclick = (e) => { if(!e.target.closest('.action-btn')) toggleDetails(key); };
                     tr.innerHTML = `
-                        <td style="font-weight: 600;">${item.user.fname} ${item.user.lname}</td>
+                        <td>
+                            <div style="font-weight: 700;">${item.user.fname} ${item.user.lname}</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">${item.user.email || 'No email provided'}</div>
+                        </td>
                         <td>${item.user.classInfo}</td>
                         <td>${mcqPoints}</td>
                         <td>${scPoints}</td>
@@ -151,12 +135,9 @@
                     let mcqHtml = `<div class="mcq-review">`;
                     item.studentChoices.forEach((choice, i) => {
                         const isCorrect = choice.userAnswerIndex === answerKey[i];
-                        mcqHtml += `<div class="mcq-item">
+                        mcqHtml += `<div class="mcq-item ${isCorrect ? 'mcq-correct' : 'mcq-wrong'}">
                                     <div style="font-weight:700; margin-bottom:5px;">${i+1}. ${choice.question}</div>
-                                    <div class="${isCorrect ? 'correct' : 'wrong'}">
-                                        <i class="fas ${isCorrect ? 'fa-check' : 'fa-times'}"></i> 
-                                        ${choice.userAnswerIndex !== -1 ? choice.options[choice.userAnswerIndex] : 'No Answer'}
-                                    </div>
+                                    <div class="${isCorrect ? 'correct-txt' : 'wrong-txt'}"><i class="fas ${isCorrect ? 'fa-check' : 'fa-times'}"></i> ${choice.userAnswerIndex !== -1 ? choice.options[choice.userAnswerIndex] : 'No Answer'}</div>
                                     ${!isCorrect ? '<div style="font-size:0.75rem; color:#64748b; margin-top:5px;">Correct: '+choice.options[answerKey[i]]+'</div>' : ''}
                                     </div>`;
                     });
@@ -166,20 +147,19 @@
                         <td colspan="8">
                             <div class="grading-box">
                                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
-                                    <h3 style="margin:0; font-size:1.1rem; color:var(--primary);">Scenario: ${item.scenario.title}</h3>
+                                    <h3 style="margin:0; font-size:1.1rem;">Scenario Review: ${item.scenario.title}</h3>
                                     <button class="btn-main" style="width:auto; margin:0; padding:8px 15px; background:#e67e22;" onclick="sendReport('${key}', ${totalPoints}, ${finalGrade})"><i class="fas fa-paper-plane"></i> Email Report</button>
                                 </div>
-                                <div style="margin-bottom: 25px; font-size: 0.95rem; line-height: 1.6; color:#475569;">
+                                <div style="margin-bottom: 25px; color:#475569;">
                                     <p><strong>Security:</strong> ${item.scenario.security}</p>
                                     <p><strong>SDLC:</strong> ${item.scenario.sdlc}</p>
                                     <p><strong>HCI:</strong> ${item.scenario.hci}</p>
                                 </div>
                                 <div style="background: #f8fafc; padding: 20px; border-radius: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid #e2e8f0;">
-                                    <strong>Assign Scenario Score (0-20):</strong>
-                                    <input type="number" id="sc-grade-${key}" max="20" min="0" value="${scPoints}" style="width:70px; padding:8px; border-radius:8px; border:1px solid #cbd5e1;">
-                                    <button class="btn-main" style="width:auto; margin:0; padding:10px 20px;" onclick="submitGrade('${key}', ${mcqPoints})">Save Grade</button>
+                                    <strong>Assign Score (0-20):</strong>
+                                    <input type="number" id="sc-grade-${key}" max="20" min="0" value="${scPoints}" style="width:70px; padding:8px; border-radius:8px;">
+                                    <button class="btn-main" style="width:auto; margin:0; padding:10px 20px;" onclick="submitGrade('${key}', ${mcqPoints})">Save & Update Grade</button>
                                 </div>
-                                <h4 style="margin: 30px 0 10px 0; font-size: 1rem; color: #64748b;">Multiple Choice Breakdown</h4>
                                 ${mcqHtml}
                             </div>
                         </td>
@@ -196,52 +176,35 @@
             el.style.display = visible ? 'none' : 'table-row';
         }
 
-        function deleteRecord(id) {
-            if (confirm("Delete this student record forever?")) {
-                db.ref('quiz_results/' + id).remove();
-            }
-        }
+        function deleteRecord(id) { if (confirm("Delete permanently?")) db.ref('quiz_results/' + id).remove(); }
 
         function submitGrade(id, mcqPoints) {
             const sc = parseFloat(document.getElementById(`sc-grade-${id}`).value) || 0;
-            db.ref('quiz_results/' + id).update({ scenarioScore: sc, isGraded: true })
-                .then(() => alert("Grade Updated!"));
+            db.ref('quiz_results/' + id).update({ scenarioScore: sc, isGraded: true }).then(() => alert("Saved!"));
         }
 
         function sendReport(key, total, grade) {
             db.ref('quiz_results/' + key).once('value', (snap) => {
                 const item = snap.val();
-                let report = `EXAM REPORT: ${item.user.fname} ${item.user.lname}\n`;
-                report += `CLASS: ${item.user.classInfo}\n`;
-                report += `FINAL GRADE: ${grade}\n`;
-                report += `TOTAL SCORE: ${total}/40\n\n`;
-                
-                report += `--- MCQ DETAILS ---\n`;
+                let report = `Your teacher has completed the final evaluation of your exam. The detailed results and breakdown are provided below.\n\n`;
+                report += `--- SUMMARY ---\nStudent: ${item.user.fname} ${item.user.lname}\nClass: ${item.user.classInfo}\nFINAL GRADE: ${grade}\nTOTAL SCORE: ${total}/40\n\n`;
+                report += `--- PART A: MULTIPLE CHOICE DETAILS ---\n`;
                 item.studentChoices.forEach((det, i) => {
                     const isCorrect = det.userAnswerIndex === answerKey[i];
-                    report += `${i+1}. ${det.question}\n   Ans: ${det.userAnswerIndex !== -1 ? det.options[det.userAnswerIndex] : 'No Answer'} (${isCorrect ? 'CORRECT' : 'INCORRECT'})\n`;
+                    report += `${i+1}. ${det.question}\n   Your Ans: ${det.userAnswerIndex !== -1 ? det.options[det.userAnswerIndex] : 'No Answer'} (${isCorrect ? 'CORRECT' : 'INCORRECT'})\n`;
                 });
-                
-                report += `\n--- SCENARIO ---\n`;
-                report += `Title: ${item.scenario.title}\n`;
-                report += `Security: ${item.scenario.security}\n`;
-                report += `SDLC: ${item.scenario.sdlc}\n`;
-                report += `HCI: ${item.scenario.hci}\n`;
+                report += `\n--- PART B: SCENARIO (${item.scenario.title}) ---\nSecurity: ${item.scenario.security}\nSDLC: ${item.scenario.sdlc}\nHCI: ${item.scenario.hci}\n\n`;
 
-                const emailPayload = {
-                    _subject: `Quiz Result: ${item.user.fname} ${item.user.lname} (Grade: ${grade})`,
-                    "Detailed Report": report,
-                    _cc: "mesuesinformatike@gmail.com" // Always send a copy to teacher
-                };
-
-                // If student provided an email, send it to them, otherwise just to teacher
                 const targetEmail = item.user.email || "mesuesinformatike@gmail.com";
-
                 fetch(`https://formsubmit.co/ajax/${targetEmail}`, {
                     method: "POST",
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(emailPayload)
-                }).then(() => alert("Report sent to student (" + targetEmail + ") and CC'd to you."));
+                    body: JSON.stringify({
+                        _subject: "Turgut Ozal High School 12 ICT Summative Result",
+                        _message: report, // Custom message for the user
+                        _cc: "mesuesinformatike@gmail.com"
+                    })
+                }).then(() => alert("Detailed report sent to student and you!"));
             });
         }
     </script>
