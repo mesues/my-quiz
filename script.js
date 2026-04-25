@@ -42,8 +42,13 @@ const scenarioScreen = document.getElementById('scenario-screen');
 const resultScreen = document.getElementById('result-screen');
 
 document.getElementById('start-btn').onclick = startQuiz;
-document.getElementById('prev-btn').onclick = () => { if(currentQ > 0) { currentQ--; loadQuestion(); } };
-document.getElementById('next-btn').onclick = () => { if(currentQ < quizData.length - 1) { currentQ++; loadQuestion(); } else { showScenario(); } };
+document.getElementById('prev-btn').onclick = function() { 
+    if(currentQ > 0) { currentQ--; loadQuestion(); } 
+};
+document.getElementById('next-btn').onclick = function() { 
+    if(currentQ < quizData.length - 1) { currentQ++; loadQuestion(); } 
+    else { showScenario(); } 
+};
 document.getElementById('submit-scenario-btn').onclick = finishQuiz;
 
 function startQuiz() {
@@ -168,6 +173,10 @@ function saveToDatabase(mcqScore, currentGrade, totalTime, details, scenario) {
             details: details,
             scenario: scenario,
             timestamp: new Date().toISOString()
+        }).then(() => {
+            console.log("Results successfully saved.");
+        }).catch((err) => {
+            console.error("Error saving results:", err);
         });
     }
 }
