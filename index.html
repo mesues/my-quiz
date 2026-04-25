@@ -3,33 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Mastery Quiz (40 Pts)</title>
+    <title>Turgut Ozal High School 12 A,B,C ICT Elective Summative Work 2025-2026/3rd Trimester</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .nav-btns { display: flex; justify-content: space-between; margin-top: 20px; gap: 10px; }
-        .btn-nav { flex: 1; background: #95a5a6; padding: 10px; border: none; color: white; border-radius: 8px; cursor: pointer; }
-        .btn-nav:hover { background: #7f8c8d; }
-    </style>
 </head>
 <body>
+    <!-- Sticky Exam Header (Hidden until login) -->
+    <div id="exam-header" class="hidden">
+        <div><span id="header-student-name">Name Surname</span> (<span id="header-class">Class</span>)</div>
+        <div style="opacity: 0.8; font-size: 0.8rem;">Turgut Ozal High School - 12 ICT Summative</div>
+    </div>
+
     <div class="container">
         <!-- Login Screen -->
         <div id="login-screen">
-            <h1>English Mastery Quiz</h1>
-            <p style="text-align:center;">Total Score: 40 Points (30 MCQ + 10 Scenario)</p>
+            <h1>ICT Elective Exam</h1>
+            <p class="faint-desc">Total Score: 40 Points (30 Multiple Choice Questions + 10 Scenario)</p>
+            
             <div class="form-group">
                 <label>First Name</label>
-                <input type="text" id="fname" placeholder="Enter your first name">
+                <input type="text" id="fname" placeholder="First Name">
             </div>
             <div class="form-group">
                 <label>Last Name</label>
-                <input type="text" id="lname" placeholder="Enter your last name">
+                <input type="text" id="lname" placeholder="Last Name">
             </div>
             <div class="form-group">
                 <label>Class / Group</label>
-                <input type="text" id="class-info" placeholder="e.g. 10-A">
+                <input type="text" id="class-info" placeholder="e.g. 12-A">
             </div>
             <button id="start-btn" class="btn-main">Start Exam</button>
+            
+            <a href="admin.html" class="admin-link">Admin Login</a>
         </div>
 
         <!-- Quiz Screen -->
@@ -53,8 +57,8 @@
             <h1>Part B: Scenario Task (10 Pts)</h1>
             <div class="report-section">
                 <h3 id="scenario-title">Scenario Name</h3>
-                <p id="scenario-desc" style="font-style: italic; color: #666;"></p>
-                <hr>
+                <p id="scenario-desc" style="font-style: italic; color: #666; font-size: 0.9rem;"></p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
                 <div class="form-group">
                     <label>1. Security Risk & Solution:</label>
                     <textarea id="ans-security" rows="3"></textarea>
@@ -75,24 +79,19 @@
         <div id="result-screen" class="hidden">
             <h1>Exam Completed</h1>
             <div class="report-section">
-                <h3>Performance Summary</h3>
-                <div class="summary-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">MCQ Score (30)</div>
-                        <div id="final-score" class="stat-val">0</div>
+                <div class="summary-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center;">
+                    <div class="stat-card" style="padding:15px; background:#f9f9f9; border-radius:10px;">
+                        <div style="font-size:0.8rem; color:#888;">Score (Out of 30)</div>
+                        <div id="final-score" style="font-size:1.5rem; font-weight:bold; color:var(--accent);">0</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Time</div>
-                        <div id="total-time" class="stat-val">0s</div>
+                    <div class="stat-card" style="padding:15px; background:#f9f9f9; border-radius:10px;">
+                        <div style="font-size:0.8rem; color:#888;">Total Time</div>
+                        <div id="total-time" style="font-size:1.5rem; font-weight:bold; color:var(--accent);">0s</div>
                     </div>
                 </div>
-                <p style="text-align:center; color:#e67e22; font-weight:bold; margin-top:15px;">Your Scenario answers have been sent for grading (Max 10 Pts).</p>
+                <p style="text-align:center; color:#e67e22; font-weight:bold; margin-top:15px; font-size: 0.9rem;">Your Scenario answers have been sent for grading (Max 10 Pts).</p>
             </div>
             <button onclick="location.reload()" class="btn-main" style="margin-top:20px; background:#7f8c8d;">Close</button>
-        </div>
-
-        <div style="text-align: center; margin-top: 50px; opacity: 0.5;">
-            <a href="admin.html" style="color: #666; font-size: 0.8rem; text-decoration: none;">Admin Login</a>
         </div>
     </div>
 
