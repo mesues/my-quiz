@@ -211,13 +211,37 @@
         function sendReport(key, total, grade) {
             db.ref('quiz_results/' + key).once('value', (snap) => {
                 const item = snap.val();
-                let report = `REPORT: ${item.user.fname} ${item.user.lname}\nSCORE: ${total}/40\nGRADE: ${grade}\n\n`;
-                // Add more details to report string if needed
-                fetch("https://formsubmit.co/ajax/mesuesinformatike@gmail.com", {
+                let report = `EXAM REPORT: ${item.user.fname} ${item.user.lname}\n`;
+                report += `CLASS: ${item.user.classInfo}\n`;
+                report += `FINAL GRADE: ${grade}\n`;
+                report += `TOTAL SCORE: ${total}/40\n\n`;
+                
+                report += `--- MCQ DETAILS ---\n`;
+                item.studentChoices.forEach((det, i) => {
+                    const isCorrect = det.userAnswerIndex === answerKey[i];
+                    report += `${i+1}. ${det.question}\n   Ans: ${det.userAnswerIndex !== -1 ? det.options[det.userAnswerIndex] : 'No Answer'} (${isCorrect ? 'CORRECT' : 'INCORRECT'})\n`;
+                });
+                
+                report += `\n--- SCENARIO ---\n`;
+                report += `Title: ${item.scenario.title}\n`;
+                report += `Security: ${item.scenario.security}\n`;
+                report += `SDLC: ${item.scenario.sdlc}\n`;
+                report += `HCI: ${item.scenario.hci}\n`;
+
+                const emailPayload = {
+                    _subject: `Quiz Result: ${item.user.fname} ${item.user.lname} (Grade: ${grade})`,
+                    "Detailed Report": report,
+                    _cc: "mesuesinformatike@gmail.com" // Always send a copy to teacher
+                };
+
+                // If student provided an email, send it to them, otherwise just to teacher
+                const targetEmail = item.user.email || "mesuesinformatike@gmail.com";
+
+                fetch(`https://formsubmit.co/ajax/${targetEmail}`, {
                     method: "POST",
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ _subject: `Exam Result: ${item.user.fname}`, Report: report })
-                }).then(() => alert("Email Sent!"));
+                    body: JSON.stringify(emailPayload)
+                }).then(() => alert("Report sent to student (" + targetEmail + ") and CC'd to you."));
             });
         }
     </script>

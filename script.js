@@ -1,15 +1,14 @@
 let quizData = [];
 let scenarios = [];
-let userData = { fname: "", lname: "", classInfo: "" };
+let userData = { fname: "", lname: "", classInfo: "", email: "" };
 let currentQ = 0;
 let sessionResults = {}; 
 let totalStartTime;
 let timerInterval;
 let selectedScenario = null;
 
-// Pre-shuffled data for the session
-let displayOrder = []; // [qIdx, qIdx, ...]
-let optionShuffles = {}; // { qIdx: [optIdx, optIdx, ...] }
+let displayOrder = []; 
+let optionShuffles = {}; 
 
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -34,6 +33,11 @@ const quizScreen = document.getElementById('quiz-screen');
 const scenarioScreen = document.getElementById('scenario-screen');
 const resultScreen = document.getElementById('result-screen');
 const examHeader = document.getElementById('exam-header');
+
+// Enter Key Support
+[document.getElementById('fname'), document.getElementById('lname'), document.getElementById('class-info'), document.getElementById('student-email')].forEach(el => {
+    el.addEventListener('keydown', (e) => { if(e.key === 'Enter') startQuiz(); });
+});
 
 document.getElementById('start-btn').onclick = startQuiz;
 document.getElementById('prev-btn').onclick = () => { if(currentQ > 0) { currentQ--; loadQuestion(); } };
@@ -61,27 +65,27 @@ function startQuiz() {
     userData.fname = document.getElementById('fname').value.trim();
     userData.lname = document.getElementById('lname').value.trim();
     userData.classInfo = document.getElementById('class-info').value.trim();
+    userData.email = document.getElementById('student-email').value.trim();
 
     if (!userData.fname || !userData.lname || !userData.classInfo || quizData.length === 0) {
-        alert("Please wait or fill details.");
+        alert("Please fill all details.");
         return;
     }
 
-    // 1. SHUFFLE EVERYTHING ONCE AT START
-    displayOrder = shuffle([...Array(quizData.length).keys()]);
-    
-    // Shuffle options for each question once
-    displayOrder.forEach(qIdx => {
-        optionShuffles[qIdx] = shuffle([...Array(quizData[qIdx].options.length).keys()]);
-    });
-
-    document.getElementById('header-student-name').innerText = userData.fname + " " + userData.lname;
-    document.getElementById('header-class').innerText = userData.classInfo;
+    // Populate Header
+    let headerName = `${userData.fname} ${userData.lname}`;
+    document.getElementById('header-student-name').innerText = headerName;
+    document.getElementById('header-class').innerText = userData.classInfo + (userData.email ? ` - ${userData.email}` : "");
     
     loginScreen.classList.add('hidden');
     examHeader.classList.remove('hidden');
     quizScreen.classList.remove('hidden');
     
+    displayOrder = shuffle([...Array(quizData.length).keys()]);
+    displayOrder.forEach(qIdx => {
+        optionShuffles[qIdx] = shuffle([...Array(quizData[qIdx].options.length).keys()]);
+    });
+
     totalStartTime = Date.now();
     loadQuestion();
     startGlobalTimer();
@@ -118,8 +122,7 @@ function loadQuestion() {
 
 function selectOption(qIdx, originalOptIdx) {
     sessionResults[qIdx] = originalOptIdx;
-    loadQuestion(); // Visually update
-    
+    loadQuestion();
     setTimeout(() => {
         if(currentQ < quizData.length - 1) {
             currentQ++;
